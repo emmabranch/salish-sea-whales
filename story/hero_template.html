@@ -14,6 +14,8 @@
     --humpback: #3987e5;
     --orca: #d95926;
     --grey: #199e70;
+    --ferry: #f3e3b5;
+    --lane: #8fb3c9;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--ocean); }
@@ -35,6 +37,11 @@
   .chip:focus-visible, .ctrl:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .stage { position: relative; width: 100%; margin: 0 auto; }
   .stage svg, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #overlay { pointer-events: none; }
+  .layers { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+  .layers .label { color: var(--ink-dim); font-size: 0.85rem; align-self: center; margin-right: 2px; }
+  .chip .swatch { width: 18px; height: 0; border-top: 2px solid currentColor; }
+  .chip .swatch.dashed { border-top-style: dashed; }
   .controls { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
   .ctrl { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: #13304a;
           color: var(--ink); font-size: 1rem; cursor: pointer; flex: none; }
@@ -58,10 +65,14 @@
   <p class="caption" id="caption" aria-live="polite"></p>
 
   <ul class="species" id="species" aria-label="Show or hide species"></ul>
+  <ul class="layers" id="layers" aria-label="Show or hide boat traffic">
+    <li class="label" aria-hidden="true">Traffic:</li>
+  </ul>
 
   <div class="stage" id="stage">
     <svg id="land" aria-hidden="true"></svg>
     <canvas id="dots" role="img" aria-label="Map of whale sightings for the selected month"></canvas>
+    <svg id="overlay" aria-hidden="true"></svg>
   </div>
 
   <div class="controls">
@@ -78,7 +89,7 @@
     </div>
   </div>
 
-  <p class="source">Each dot is a whale sighting from 2018 to 2025, pooled by month. Summer has more people watching, so compare where and when each species appears rather than raw totals. Data: OBIS (Happywhale, iNaturalist, BC Cetacean Sightings Network, and others). Coastline: Statistics Canada (Open Government Licence, Canada) and US Census Bureau.</p>
+  <p class="source">Each dot is a whale sighting from 2018 to 2025, pooled by month. Summer has more people watching, so compare where and when each species appears rather than raw totals. Data: OBIS (Happywhale, iNaturalist, BC Cetacean Sightings Network, and others). Coastline: Statistics Canada (Open Government Licence, Canada) and US Census Bureau. Ferry routes and shipping lanes: &copy; OpenStreetMap contributors (ODbL); boats are for show, not real positions.</p>
 
   <details>
     <summary>Show the numbers as a table</summary>
@@ -90,6 +101,7 @@
 <script>
 const LAND = /*LAND_GEOJSON*/;
 const POINTS = /*POINTS_JSON*/;   // [lon, lat, species index, month 0-11]
+const ROUTES = /*ROUTES_GEOJSON*/; // lines; layer 0 = ferry, 1 = shipping lane; boat 1 = animated
 
 const MONTHS = ["January","February","March","April","May","June","July",
                 "August","September","October","November","December"];
@@ -173,12 +185,98 @@ function layout() {
   svg.append("rect").attr("width", width).attr("height", height).attr("fill", "var(--ocean)");
   svg.append("path").datum(LAND_D3).attr("d", d3.geoPath(projection)).attr("fill", "var(--land)");
   POINTS.forEach(p => { const xy = projection([p[0], p[1]]); p.x = xy[0]; p.y = xy[1]; });
+  drawTraffic();
   // Tell the story page how tall this map is, so its frame fits exactly
   if (window.parent !== window) {
     requestAnimationFrame(() => window.parent.postMessage(
       { whaleMapHeight: document.documentElement.scrollHeight }, "*"));
   }
 }
+
+// --- Ferry routes, shipping lanes, and little boats ---
+const overlay = d3.select("#overlay");
+const TRAFFIC = [
+  { name: "Ferry routes",   colour: css.getPropertyValue("--ferry").trim(), dashed: false },
+  { name: "Shipping lanes", colour: css.getPropertyValue("--lane").trim(),  dashed: true }
+];
+const showTraffic = [false, false];
+let boats = [], boatFrame = null;
+
+function drawTraffic() {
+  overlay.attr("viewBox", `0 0 ${width} ${height}`);
+  overlay.selectAll("*").remove();
+  const path = d3.geoPath(projection);
+  boats = [];
+  TRAFFIC.forEach((layer, li) => {
+    const g = overlay.append("g").attr("display", showTraffic[li] ? null : "none").attr("class", "traffic-" + li);
+    const feats = ROUTES.features.filter(f => f.properties.layer === li);
+    g.selectAll("path.route").data(feats).join("path")
+      .attr("class", "route").attr("d", path).attr("fill", "none")
+      .attr("stroke", layer.colour).attr("stroke-opacity", 0.75)
+      .attr("stroke-width", li === 0 ? 1.4 : 1.2)
+      .attr("stroke-dasharray", layer.dashed ? "4 3" : null)
+      .each(function (f) {
+        if (!f.properties.boat) return;
+        const len = this.getTotalLength();
+        if (len < 20) return;
+        // Ferries shuttle back and forth; big ships follow their one-way lane
+        const boat = g.append("path")
+          .attr("d", li === 0 ? "M-5,-2.2 L4,-2.2 L6.5,0 L4,2.2 L-5,2.2 Z" : "M-6.5,-2.2 L4.5,-2.2 L7,0 L4.5,2.2 L-6.5,2.2 Z")
+          .attr("fill", li === 0 ? "#ffffff" : layer.colour)
+          .attr("stroke", "#0d2436").attr("stroke-width", 0.8);
+        boats.push({ el: boat, line: this, len, kind: li,
+                     pos: Math.random() * len, dir: 1,
+                     speed: (li === 0 ? 26 : 12) * (0.8 + Math.random() * 0.4) });
+      });
+  });
+  placeBoats(0);
+}
+
+function placeBoats(dt) {
+  boats.forEach(b => {
+    if (dt) {
+      b.pos += b.dir * b.speed * dt;
+      if (b.kind === 0) {               // ferry: turn around at each terminal
+        if (b.pos > b.len) { b.pos = b.len; b.dir = -1; }
+        if (b.pos < 0) { b.pos = 0; b.dir = 1; }
+      } else if (b.pos > b.len) {       // ship: start the lane again
+        b.pos = 0;
+      }
+    }
+    const p = b.line.getPointAtLength(b.pos);
+    const q = b.line.getPointAtLength(Math.min(b.len, Math.max(0, b.pos + b.dir * 2)));
+    let angle = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+    if (b.pos + b.dir * 2 > b.len || b.pos + b.dir * 2 < 0) angle += 180;
+    b.el.attr("transform", `translate(${p.x},${p.y}) rotate(${angle})`);
+  });
+}
+
+let lastTime = null;
+function sail(now) {
+  const dt = lastTime === null ? 0 : Math.min(0.1, (now - lastTime) / 1000);
+  lastTime = now;
+  placeBoats(dt);
+  boatFrame = requestAnimationFrame(sail);
+}
+function updateSailing() {
+  cancelAnimationFrame(boatFrame); lastTime = null;
+  if (!reduceMotion && showTraffic.some(Boolean)) boatFrame = requestAnimationFrame(sail);
+}
+
+const layerList = document.getElementById("layers");
+TRAFFIC.forEach((layer, li) => {
+  const item = document.createElement("li");
+  const b = document.createElement("button");
+  b.className = "chip"; b.setAttribute("aria-pressed", "false");
+  b.innerHTML = `<span class="swatch${layer.dashed ? " dashed" : ""}" style="color:${layer.colour}"></span><span>${layer.name}</span>`;
+  b.addEventListener("click", () => {
+    showTraffic[li] = !showTraffic[li];
+    b.setAttribute("aria-pressed", String(showTraffic[li]));
+    overlay.select(".traffic-" + li).attr("display", showTraffic[li] ? null : "none");
+    updateSailing();
+  });
+  item.appendChild(b); layerList.appendChild(item);
+});
 
 // --- Drawing ---
 function drawMonth(m, alpha) {

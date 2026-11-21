@@ -9,8 +9,8 @@
 # Keeps the parts in the Salish Sea, then asks: how many whale sightings
 # were within 2 km of a ferry route or a shipping lane?
 #
-# The download is saved to data/raw/osm_routes.rds, so it only happens once.
-# Delete that file to download fresh data.
+# Each layer is saved to data/raw (osm_ferry.rds, osm_lanes.rds) as soon as
+# it downloads, so later runs skip the download. Delete them to refresh.
 #
 # Data: (c) OpenStreetMap contributors, Open Database Licence (ODbL).
 # =============================================================================
@@ -20,7 +20,6 @@ library(tidyverse)
 library(sf)
 
 bbox     <- c(xmin = -125.6, ymin = 46.8, xmax = -121.8, ymax = 50.5)
-raw_file <- here("data", "raw", "osm_routes.rds")
 
 # ---- 1. Download from OpenStreetMap (first run only) ------------------------
 
@@ -40,23 +39,47 @@ as_lines <- function(osm) {
     st_cast("MULTILINESTRING")
 }
 
-if (!file.exists(raw_file)) {
+# The download servers are often busy. Try each one up to three times,
+# waiting a little longer each time, and save each layer as soon as it arrives.
+servers <- c("https://overpass-api.de/api/interpreter",
+             "https://overpass.private.coffee/api/interpreter",
+             "https://overpass.kumi.systems/api/interpreter")
+
+fetch_layer <- function(key, value, file, label) {
+  if (file.exists(file)) {
+    message(label, ": already downloaded")
+    return(readRDS(file))
+  }
   library(osmdata)
-  message("Downloading ferry routes from OpenStreetMap (can take a minute)...")
-  ferry <- opq(bbox = unname(bbox), timeout = 300) |>
-    add_osm_feature(key = "route", value = "ferry") |>
-    osmdata_sf()
-  
-  message("Downloading shipping lanes from OpenStreetMap...")
-  lanes <- opq(bbox = unname(bbox), timeout = 300) |>
-    add_osm_feature(key = "seamark:type", value = "separation_lane") |>
-    osmdata_sf()
-  
-  saveRDS(list(ferry = as_lines(ferry), lanes = as_lines(lanes)), raw_file)
-  message("Saved data/raw/osm_routes.rds")
+  for (server in servers) {
+    set_overpass_url(server)
+    for (attempt in 1:3) {
+      message(label, ": trying ", sub("https://([^/]+)/.*", "\\1", server),
+              " (attempt ", attempt, ")")
+      result <- tryCatch(
+        opq(bbox = unname(bbox), timeout = 300) |>
+          add_osm_feature(key = key, value = value) |>
+          osmdata_sf(),
+        error = function(e) { message("  busy: ", conditionMessage(e)); NULL }
+      )
+      if (!is.null(result)) {
+        lines <- as_lines(result)
+        saveRDS(lines, file)
+        message("  saved ", nrow(lines), " pieces to data/raw/", basename(file))
+        return(lines)
+      }
+      Sys.sleep(20 * attempt)
+    }
+  }
+  stop("All download servers were busy. Wait ten minutes and click Source again.")
 }
 
-osm <- readRDS(raw_file)
+osm <- list(
+  ferry = fetch_layer("route", "ferry",
+                      here("data", "raw", "osm_ferry.rds"), "Ferry routes"),
+  lanes = fetch_layer("seamark:type", "separation_lane",
+                      here("data", "raw", "osm_lanes.rds"), "Shipping lanes")
+)
 
 # ---- 2. Keep the parts in the Salish Sea ------------------------------------
 
@@ -108,6 +131,39 @@ near_routes <- whales |>
   )
 print(near_routes)
 saveRDS(near_routes, here("data", "processed", "near_routes.rds"))
+
+
+# ---- 3b. Fair comparison: how much of the sea is near a route? ---------------
+# If routes cover half the water, half the sightings being near a route is
+# just chance. Compare each species' share with the share of the water area.
+
+water <- st_sf(geometry = boundary) |>
+  st_transform(3005) |>
+  st_difference(st_union(st_transform(readRDS(here("data", "processed", "land.rds")), 3005)))
+
+water_near <- function(layer_name, dist_m = 2000) {
+  zone <- routes_bc |> filter(layer == layer_name) |> st_buffer(dist_m) |> st_union()
+  as.numeric(sum(st_area(st_intersection(water, zone))) / sum(st_area(water)))
+}
+zone_all <- st_union(st_buffer(routes_bc, 2000))
+area_share <- tibble(
+  pct_water_near_ferry  = round(100 * water_near("Ferry route"), 1),
+  pct_water_near_lane   = round(100 * water_near("Shipping lane"), 1),
+  pct_water_near_either = round(100 * as.numeric(
+    sum(st_area(st_intersection(water, zone_all))) / sum(st_area(water))), 1)
+)
+print(area_share)
+
+near_vs_area <- near_routes |>
+  mutate(
+    times_ferry  = round(pct_near_ferry  / area_share$pct_water_near_ferry, 1),
+    times_lane   = round(pct_near_lane   / area_share$pct_water_near_lane, 1),
+    times_either = round(pct_near_either / area_share$pct_water_near_either, 1)
+  ) |>
+  select(common, starts_with("times"))
+print(near_vs_area)
+saveRDS(list(area_share = area_share, near_vs_area = near_vs_area),
+        here("data", "processed", "near_routes_vs_area.rds"))
 
 # ---- 4. Quick look -------------------------------------------------------------
 

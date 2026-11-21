@@ -97,6 +97,18 @@ Whales are easier to hear than to see. Press a sound to play it, and watch it dr
 </script>
 ```
 
+## Whales in the traffic
+
+Switch on **Ferry routes** and **Shipping lanes** on the map above to see the boat traffic whales share the sea with.
+
+Ferry routes and shipping lanes, plus 2 km either side, cover about a third of the Salish Sea. About half of all whale sightings fall in that zone. So whales turn up near busy routes a little more than the area alone predicts, but not dramatically.
+
+- **Humpbacks are seen near shipping lanes 1.7 times as often as chance would suggest.** The lanes run through Juan de Fuca Strait, the humpbacks' busiest feeding area, which is why ship strikes are a concern.
+- **Orcas are seen near ferry routes 1.7 times as often.** Some of that is where orcas travel, and some is that a ferry is a floating viewing deck full of people with phones.
+- **Grey whales mostly stay out of the shipping lanes** (0.6 times), feeding in shallow bays instead.
+
+As with everything else here, these are sightings, so they show where whales and watchers overlap, not where whales are.
+
 ## More whales, or more watchers?
 
 :::::: {.cr-section}
@@ -153,4 +165,5 @@ The broader lesson applies well beyond whales. Whenever counts come from people 
 - Contributing datasets include Happywhale, iNaturalist research-grade observations, and British Columbia Cetacean Sightings Network observations, as published through OBIS.
 - Coastline: Statistics Canada, 2021 Census cartographic boundary file (provinces and territories), under the Open Government Licence (Canada); and US Census Bureau cartographic boundary file (states, 1:500,000).
 - Sounds: orca calls, US National Park Service, Glacier Bay National Park (public domain, via Wikimedia Commons); humpback song, NOAA Northeast Fisheries Science Center, Passive Acoustics Branch, [Sounds in the Ocean](https://www.fisheries.noaa.gov/national/science-data/sounds-ocean-mammals) (public domain); humpback with a ship, [NOAA Pacific Marine Environmental Laboratory](https://pmel.noaa.gov/acoustics/multimedia.html) (public information).
+- Ferry routes and shipping lanes: © OpenStreetMap contributors, under the Open Database Licence (ODbL), via the Overpass API.
 :::
