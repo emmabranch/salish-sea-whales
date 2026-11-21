@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A year in the Salish Sea</title>
+<style>
+  :root {
+    --ocean: #0d2436;
+    --land: #1e3446;
+    --ink: #f2f5f7;
+    --ink-dim: #a9b8c4;
+    --line: #2f4a5e;
+    --humpback: #3987e5;
+    --orca: #d95926;
+    --grey: #199e70;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ocean); }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); }
+  .whale-map { max-width: 760px; margin: 0 auto; padding: 18px 18px 14px; }
+  .kicker { margin: 0; color: var(--ink-dim); font-size: 0.95rem; letter-spacing: 0.02em; }
+  .month { margin: 2px 0 0; font-family: Georgia, "Times New Roman", serif; font-weight: 400;
+           font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.1; }
+  /* Fixed height so the map never jumps when a caption wraps to two lines */
+  .caption { margin: 6px 0 12px; font-size: 1.05rem; line-height: 1.4; min-height: 2.9em; }
+  .species { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+          border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit;
+          font-size: 0.95rem; cursor: pointer; }
+  .chip .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .chip .count { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+  .chip[aria-pressed="false"] { opacity: 0.45; }
+  .chip[aria-pressed="false"] .dot { background: transparent !important; outline: 2px solid currentColor; outline-offset: -2px; }
+  .chip:focus-visible, .ctrl:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .stage { position: relative; width: 100%; margin: 0 auto; }
+  .stage svg, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .controls { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .ctrl { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: #13304a;
+          color: var(--ink); font-size: 1rem; cursor: pointer; flex: none; }
+  .ctrl.play { width: 48px; height: 48px; font-size: 1.15rem; }
+  .slider { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  input[type=range] { width: 100%; accent-color: var(--ink); }
+  .ticks { display: flex; justify-content: space-between; color: var(--ink-dim); font-size: 0.72rem; padding: 0 2px; }
+  .source { margin: 12px 0 0; color: var(--ink-dim); font-size: 0.78rem; line-height: 1.4; }
+  details { margin-top: 10px; color: var(--ink-dim); font-size: 0.85rem; }
+  summary { cursor: pointer; }
+  table { border-collapse: collapse; margin-top: 8px; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 4px 8px; text-align: right; border-bottom: 1px solid var(--line); color: var(--ink); }
+  th:first-child, td:first-child { text-align: left; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<section class="whale-map" aria-label="Interactive map: a year of whale sightings in the Salish Sea">
+  <p class="kicker">A year in the Salish Sea</p>
+  <h2 class="month" id="month">January</h2>
+  <p class="caption" id="caption" aria-live="polite"></p>
+
+  <ul class="species" id="species" aria-label="Show or hide species"></ul>
+
+  <div class="stage" id="stage">
+    <svg id="land" aria-hidden="true"></svg>
+    <canvas id="dots" role="img" aria-label="Map of whale sightings for the selected month"></canvas>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl" id="prev" aria-label="Previous month">&#9664;&#xFE0E;</button>
+    <button class="ctrl play" id="play" aria-label="Play">&#9654;&#xFE0E;</button>
+    <button class="ctrl" id="next" aria-label="Next month">&#9654;&#xFE0E;&#9654;&#xFE0E;</button>
+    <div class="slider">
+      <label for="slider" class="visually-hidden">Month</label>
+      <input type="range" id="slider" min="0" max="11" step="1" value="0">
+      <div class="ticks" aria-hidden="true">
+        <span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span>
+        <span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="source">Each dot is a whale sighting from 2018 to 2025, pooled by month. Summer has more people watching, so compare where and when each species appears rather than raw totals. Data: OBIS (Happywhale, iNaturalist, BC Cetacean Sightings Network, and others). Coastline: Statistics Canada (Open Government Licence, Canada) and US Census Bureau.</p>
+
+  <details>
+    <summary>Show the numbers as a table</summary>
+    <table id="table"></table>
+  </details>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script>
+const LAND = /*LAND_GEOJSON*/;
+const POINTS = /*POINTS_JSON*/;   // [lon, lat, species index, month 0-11]
+
+const MONTHS = ["January","February","March","April","May","June","July",
+                "August","September","October","November","December"];
+const CAPTIONS = [
+  "Winter. A handful of sightings of each species.",
+  "The quietest month of the year.",
+  "Grey whales arrive in northern Puget Sound.",
+  "Grey whale season peaks.",
+  "Orcas spread out and the first humpbacks return.",
+  "Humpbacks arrive in force.",
+  "Humpbacks fill Juan de Fuca Strait and the Strait of Georgia.",
+  "Peak humpback season.",
+  "Humpbacks linger into autumn.",
+  "Sightings begin to fall.",
+  "Most humpbacks have left for the winter.",
+  "Back to winter quiet."
+];
+const css = getComputedStyle(document.documentElement);
+const SPECIES = [
+  { name: "Humpback whale", colour: css.getPropertyValue("--humpback").trim() },
+  { name: "Orca",           colour: css.getPropertyValue("--orca").trim() },
+  { name: "Grey whale",     colour: css.getPropertyValue("--grey").trim() }
+];
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// --- State ---
+let month = 0, playing = false, timer = null;
+const visible = SPECIES.map(() => true);
+
+// --- Counts per month and species ---
+const counts = MONTHS.map(() => SPECIES.map(() => 0));
+POINTS.forEach(p => counts[p[3]][p[2]]++);
+
+// --- Map geometry ---
+const stage = document.getElementById("stage");
+const svg = d3.select("#land");
+const canvas = document.getElementById("dots");
+const ctx = canvas.getContext("2d");
+// d3 expects outer rings to run clockwise; this box does
+const bounds = { type: "Feature", geometry: { type: "Polygon", coordinates: [[
+  [-125.4, 47.0], [-125.4, 50.3], [-122.0, 50.3], [-122.0, 47.0], [-125.4, 47.0]]] } };
+
+// GeoJSON written by R runs outer rings the other way round, which d3 reads as
+// "everything except this shape". Flip any polygon whose area is over half the
+// globe so land is drawn as land.
+function rewind(geo) {
+  const fix = coords => {
+    const area = d3.geoArea({ type: "Polygon", coordinates: coords });
+    return area > 2 * Math.PI ? coords.map(r => r.slice().reverse()) : coords;
+  };
+  const fixGeom = g => g.type === "Polygon" ? { ...g, coordinates: fix(g.coordinates) }
+    : g.type === "MultiPolygon" ? { ...g, coordinates: g.coordinates.map(fix) } : g;
+  return geo.type === "FeatureCollection"
+    ? { ...geo, features: geo.features.map(f => ({ ...f, geometry: fixGeom(f.geometry) })) }
+    : geo;
+}
+const LAND_D3 = rewind(LAND);
+let projection, width, height, dpr;
+
+function layout() {
+  // Fit the map to the available width, but never taller than about two
+  // thirds of the screen, so the controls stay in view
+  stage.style.width = "100%";
+  width = stage.clientWidth;
+  projection = d3.geoMercator().fitWidth(width, bounds);
+  const [[, y0], [, y1]] = d3.geoPath(projection).bounds(bounds);
+  const ratio = (y1 - y0) / width;
+  const maxHeight = Math.max(360, window.innerHeight * 0.68);
+  if (width * ratio > maxHeight) width = Math.round(maxHeight / ratio);
+  stage.style.width = width + "px";
+  height = Math.round(width * ratio);
+  stage.style.height = height + "px";
+  projection = d3.geoMercator().fitSize([width, height], bounds);
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = width * dpr; canvas.height = height * dpr;
+  svg.attr("viewBox", `0 0 ${width} ${height}`);
+  svg.selectAll("*").remove();
+  svg.append("rect").attr("width", width).attr("height", height).attr("fill", "var(--ocean)");
+  svg.append("path").datum(LAND_D3).attr("d", d3.geoPath(projection)).attr("fill", "var(--land)");
+  POINTS.forEach(p => { const xy = projection([p[0], p[1]]); p.x = xy[0]; p.y = xy[1]; });
+}
+
+// --- Drawing ---
+function drawMonth(m, alpha) {
+  const r = Math.max(1.6, width / 380);
+  ctx.globalAlpha = alpha * 0.8;
+  SPECIES.forEach((s, i) => {
+    if (!visible[i]) return;
+    ctx.fillStyle = s.colour;
+    ctx.beginPath();
+    POINTS.forEach(p => {
+      if (p[3] === m && p[2] === i) { ctx.moveTo(p.x + r, p.y); ctx.arc(p.x, p.y, r, 0, 2 * Math.PI); }
+    });
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+function render(from, to, t) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+  if (from !== null && from !== to) drawMonth(from, 1 - t);
+  drawMonth(to, from === null || from === to ? 1 : t);
+}
+
+let fadeFrame = null;
+function setMonth(m, animate = true) {
+  const from = month;
+  month = (m + 12) % 12;
+  document.getElementById("month").textContent = MONTHS[month];
+  document.getElementById("caption").textContent = CAPTIONS[month];
+  document.getElementById("slider").value = month;
+  updateChips();
+  cancelAnimationFrame(fadeFrame);
+  if (!animate || reduceMotion || from === month) { render(null, month, 1); return; }
+  const start = performance.now(), dur = 700;
+  const step = now => {
+    const t = Math.min(1, (now - start) / dur);
+    render(from, month, d3.easeCubicInOut(t));
+    if (t < 1) fadeFrame = requestAnimationFrame(step);
+  };
+  fadeFrame = requestAnimationFrame(step);
+}
+
+// --- Species chips ---
+const list = document.getElementById("species");
+SPECIES.forEach((s, i) => {
+  const li = document.createElement("li");
+  const b = document.createElement("button");
+  b.className = "chip"; b.setAttribute("aria-pressed", "true");
+  b.innerHTML = `<span class="dot" style="background:${s.colour};color:${s.colour}"></span>` +
+                `<span>${s.name}</span><span class="count"></span>`;
+  b.addEventListener("click", () => {
+    visible[i] = !visible[i];
+    b.setAttribute("aria-pressed", String(visible[i]));
+    render(null, month, 1);
+  });
+  li.appendChild(b); list.appendChild(li);
+});
+function updateChips() {
+  list.querySelectorAll(".chip").forEach((b, i) => {
+    b.querySelector(".count").textContent = counts[month][i].toLocaleString("en-CA");
+  });
+}
+
+// --- Controls ---
+const playBtn = document.getElementById("play");
+function setPlaying(on) {
+  playing = on;
+  playBtn.innerHTML = on ? "&#10074;&#10074;" : "&#9654;&#xFE0E;";
+  playBtn.setAttribute("aria-label", on ? "Pause" : "Play");
+  clearInterval(timer);
+  if (on) timer = setInterval(() => setMonth(month + 1), 2600);
+}
+playBtn.addEventListener("click", () => setPlaying(!playing));
+document.getElementById("prev").addEventListener("click", () => { setPlaying(false); setMonth(month - 1); });
+document.getElementById("next").addEventListener("click", () => { setPlaying(false); setMonth(month + 1); });
+document.getElementById("slider").addEventListener("input", e => { setPlaying(false); setMonth(+e.target.value); });
+
+// --- Table view ---
+const table = document.getElementById("table");
+table.innerHTML = `<thead><tr><th scope="col">Month</th>${SPECIES.map(s => `<th scope="col">${s.name}</th>`).join("")}</tr></thead>` +
+  `<tbody>${MONTHS.map((m, i) => `<tr><th scope="row">${m}</th>${counts[i].map(c => `<td>${c.toLocaleString("en-CA")}</td>`).join("")}</tr>`).join("")}</tbody>`;
+
+// --- Start ---
+layout();
+setMonth(0, false);
+window.addEventListener("resize", () => { layout(); render(null, month, 1); });
+// Play automatically once visible, unless the reader prefers reduced motion
+if (!reduceMotion && "IntersectionObserver" in window) {
+  const io = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) { setPlaying(true); io.disconnect(); }
+  }, { threshold: 0.4 });
+  io.observe(stage);
+}
+</script>
+</body>
+</html>
