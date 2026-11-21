@@ -1,0 +1,9 @@
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Renviron
+story/*_files/
+story/.quarto/
+/.quarto/
+.DS_Store
