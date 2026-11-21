@@ -25,7 +25,7 @@ An interactive data story about humpback whales, orcas, and grey whales in the S
 
 1. Install R (4.3 or later), Quarto, and these packages: `tidyverse`, `here`, `sf`, `robis`, `jsonlite`, `tigris`, `av`.
 2. Download the Statistics Canada 2021 cartographic boundary file for provinces and territories (shapefile) and put the zip file in `data/raw/`.
-3. Run the scripts in `R/` in order:
+3. Run the scripts in the `R/` folder, in order:
    - `01_check_obis.R` downloads the OBIS records
    - `02_clean.R` cleans them to the Salish Sea boundary
    - `03_effort.R` builds the watcher comparisons
