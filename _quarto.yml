@@ -1,9 +1,44 @@
 project:
-  type: default
+  type: website
   output-dir: docs
   render:
     - index.qmd
+    - map.qmd
+    - listen.qmd
+    - about.qmd
   resources:
     - story/assets/
     - story/year-in-salish-sea.html
     - story/listen.html
+    - .nojekyll
+
+website:
+  title: "Whales of the Salish Sea"
+  site-url: https://emmabranch.github.io/salish-sea-whales/
+  repo-url: https://github.com/emmabranch/salish-sea-whales
+  image: story/assets/year-in-salish-sea.png
+  navbar:
+    left:
+      - href: index.qmd
+        text: Story
+      - href: map.qmd
+        text: Map
+      - href: listen.qmd
+        text: Listen
+      - href: about.qmd
+        text: About the data
+    right:
+      - icon: github
+        href: https://github.com/emmabranch/salish-sea-whales
+        aria-label: Code on GitHub
+
+format:
+  html:
+    theme: [flatly, brand, brand.scss, theme.scss]
+    include-after-body: footer.html
+    toc: false
+
+execute:
+  echo: false
+  warning: false
+  message: false

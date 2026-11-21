@@ -1,0 +1,18 @@
+---
+title: "Listen"
+subtitle: "Whale sounds, drawn as live spectrograms."
+---
+
+Whales are easier to hear than to see. Press a sound to play it, and watch it draw itself as a spectrogram. Orca calls sit high and sharp, humpback song lower and slower, and ship noise spreads across the same low pitches humpbacks use. Headphones help, especially for the humpbacks.
+
+```{=html}
+<iframe class="whale-frame listen-frame" id="listen-widget" src="story/listen.html"
+        title="Whale sounds with a live spectrogram" loading="lazy"></iframe>
+<script>
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data.listenHeight) {
+      document.getElementById("listen-widget").style.height = e.data.listenHeight + "px";
+    }
+  });
+</script>
+```

@@ -1,115 +1,64 @@
 ---
-title: "Whales of the Salish Sea"
-subtitle: "More whales, or more watchers?"
+pagetitle: "Whales of the Salish Sea: more whales, or more watchers?"
 author: "Emma Branch"
-date: last-modified
-date-format: "MMMM D, YYYY"
 description: "An interactive data story about humpback whales, orcas, and grey whales in the Salish Sea, and how much of the rise in sightings is really more people watching."
 image: story/assets/year-in-salish-sea.png
 format:
   closeread-html:
-    theme: [brand, brand.scss, theme.scss]
+    theme: [flatly, brand, brand.scss, theme.scss]
+    include-after-body: footer.html
     toc: false
     cr-style:
       narrative-background-color-sidebar: transparent
       section-background-color: transparent
-    include-before-body:
-      - topbar.html
-      - story-hero.html
-    include-after-body:
-      - footer.html
-execute:
-  echo: false
-  warning: false
-  message: false
+      narrative-background-color-overlay: "rgba(11, 34, 51, 0.92)"
+      narrative-text-color-overlay: "#ffffff"
 ---
 
 ```{r setup}
-library(tidyverse)
-library(here)
-
-whales <- readRDS(here("data", "processed", "whales.rds"))
-effort <- readRDS(here("data", "processed", "effort_by_year.rds"))
-story  <- readRDS(here("data", "processed", "story_data.rds"))
-n_raw  <- nrow(readRDS(here("data", "raw", "obis_whales_raw.rds")))
-
-last_full_year <- as.integer(format(Sys.Date(), "%Y")) - 1
-fmt <- function(x) format(round(x), big.mark = ",")
-
-# Watchers and humpbacks, growth since 2015
-inat <- effort$inat_effort
-watchers_x <- with(inat, inat_records[year == last_full_year] / inat_records[year == 2015])
-hump <- effort$ratio
-humpback_x <- with(hump, `Humpback whale`[year == last_full_year] / `Humpback whale`[year == 2015])
-
-# Humpbacks per 1,000 iNaturalist observations
-rate <- effort$effort |> filter(common == "Humpback whale")
-rate_2015 <- rate$per_1000_observations[rate$year == 2015]
-rate_recent <- mean(rate$per_1000_observations[rate$year %in% (last_full_year - 1):last_full_year])
-
-# Calendar shares
-cal <- story$calendar
-share <- function(sp, months) round(100 * sum(cal$share[cal$common == sp & cal$month %in% months]))
-grey_spring  <- share("Grey whale", 3:5)
-hump_summer  <- share("Humpback whale", 6:10)
+source(here::here("R", "page_setup.R"))
+source(here::here("R", "hero_stripes.R"))
 ```
 
-## A year in the Salish Sea
+::::: {.hero-full .column-screen}
 
-Each dot below is a whale sighting, pooled across 2018 to `r last_full_year` and sorted by month. Press play, or drag the slider, and switch species on and off with the buttons above the map.
+```{r hero-bg}
+#| output: asis
+cat(hero_stripes(whales, last_full_year))
+```
+
+:::: {.hero-inner}
+
+[Portfolio project · R · D3 · open data]{.eyebrow}
+
+# More whales, or more watchers? [What 13,000 sightings say about the Salish Sea.]{.accent}
+
+Whale sightings in the Salish Sea have soared. Some of that is whales, and some of it is people with phones. This story untangles the two, using open records of humpback whales, orcas, and grey whales.
+
+[Read the story](#more-whales-or-more-watchers){.btn .btn-accent} [Explore the map](map.qmd){.btn .btn-ghost} [Code on GitHub](https://github.com/emmabranch/salish-sea-whales){.btn .btn-ghost}
+
+[Background: one stripe per year since 2000, brighter in years with more humpback whale sightings. Data: OBIS (Ocean Biodiversity Information System), 1971 to 2026, Salish Sea only.]{.hero-note}
+
+::::
 
 ```{=html}
-<iframe class="whale-frame" id="whale-map" src="story/year-in-salish-sea.html"
-        title="Interactive map of whale sightings in the Salish Sea by month" loading="lazy"></iframe>
-<script>
-  /* The map reports its own height, so the frame fits it exactly */
-  window.addEventListener("message", function (e) {
-    if (e.data && e.data.whaleMapHeight) {
-      document.getElementById("whale-map").style.height = e.data.whaleMapHeight + "px";
-    }
-  });
-</script>
+<svg class="hero-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true"><path d="M0,40 C240,80 480,0 720,30 C960,60 1200,10 1440,40 L1440,80 L0,80 Z"></path></svg>
 ```
 
-## When each species visits
+:::::
 
-![](story/assets/whale-calendar.png){fig-alt="Three circular month charts. Humpback whale sightings peak in August, orca sightings are spread from May to September with a July peak, and grey whale sightings peak in April."}
-
-The three species keep very different calendars.
-
-- **Grey whales are a spring story.** `r grey_spring`% of their sightings fall between March and May, and most are in one corner of northern Puget Sound. That fits the "Sounders", a small group of grey whales that [leave their northward migration to feed on ghost shrimp for two to three months each spring](https://cascadiaresearch.org/?p=3374), around Whidbey and Camano Islands.
-- **Humpbacks arrive in summer and leave in autumn.** `r hump_summer`% of their sightings fall between June and October, mostly in Juan de Fuca Strait and the central Strait of Georgia.
-- **Orcas are the most year-round of the three.** They peak from May to September but turn up in every month.
-
-## Listen
-
-Whales are easier to hear than to see. Press a sound to play it, and watch it draw itself as a spectrogram. Orca calls sit high and sharp, humpback song lower and slower, and ship noise spreads across the same low pitches humpbacks use. Headphones help, especially for the humpbacks.
-
-```{=html}
-<iframe class="whale-frame listen-frame" id="listen-widget" src="story/listen.html"
-        title="Whale sounds with a live spectrogram" loading="lazy"></iframe>
-<script>
-  window.addEventListener("message", function (e) {
-    if (e.data && e.data.listenHeight) {
-      document.getElementById("listen-widget").style.height = e.data.listenHeight + "px";
-    }
-  });
-</script>
+```{r stats}
+#| output: asis
+cat(sprintf('<div class="stat-row lift">
+<div class="stat-box"><span class="num">%s</span><span class="lab">whale sightings after cleaning</span></div>
+<div class="stat-box"><span class="num">%s&times;</span><span class="lab">growth in iNaturalist marine records, 2015 to %s</span></div>
+<div class="stat-box"><span class="num">%s&times;</span><span class="lab">growth in humpback sightings over the same years</span></div>
+</div>', fmt(nrow(whales)), round(watchers_x), last_full_year, round(humpback_x)))
 ```
-
-## Whales in the traffic
-
-Switch on **Ferry routes** and **Shipping lanes** on the map above to see the boat traffic whales share the sea with.
-
-Ferry routes and shipping lanes, plus 2 km either side, cover about a third of the Salish Sea. About half of all whale sightings fall in that zone. So whales turn up near busy routes a little more than the area alone predicts, but not dramatically.
-
-- **Humpbacks are seen near shipping lanes 1.7 times as often as chance would suggest.** The lanes run through Juan de Fuca Strait, the humpbacks' busiest feeding area, which is why ship strikes are a concern.
-- **Orcas are seen near ferry routes 1.7 times as often.** Some of that is where orcas travel, and some is that a ferry is a floating viewing deck full of people with phones.
-- **Grey whales mostly stay out of the shipping lanes** (0.6 times), feeding in shallow bays instead.
-
-As with everything else here, these are sightings, so they show where whales and watchers overlap, not where whales are.
 
 ## More whales, or more watchers?
+
+Scroll down. The chart changes as you read.
 
 :::::: {.cr-section}
 
@@ -151,19 +100,8 @@ That matches what whale researchers report from direct photo-identification. The
 
 The broader lesson applies well beyond whales. Whenever counts come from people choosing to report them, a rise in reports is partly a rise in reporting. The fix is the same as in public health surveillance: find a measure of effort, or a comparison group seen by the same observers, and look at rates rather than raw counts.
 
-## How this was made
+## Keep exploring
 
-- **Data.** Occurrence records for humpback whales, orcas (killer whales), and grey whales, downloaded from [OBIS](https://obis.org) with the robis R package. The largest sources are Happywhale, iNaturalist research-grade observations, and the BC Cetacean Sightings Network.
-- **Cleaning.** `r fmt(n_raw)` records were downloaded. Records on land, records outside an approximate Salish Sea boundary, and likely duplicates (the same species, on the same day, within about 1 km) were removed, leaving `r fmt(nrow(whales))` sightings. Happywhale records one row per identified whale, so a group of four humpbacks becomes one sighting here.
-- **Effort.** The number of iNaturalist research-grade marine observations inside the boundary each year, from the OBIS statistics service.
-- **Tools.** R (tidyverse, sf, robis), D3 for the interactive map, and Quarto with the closeread extension for this page. The code is [on GitHub](https://github.com/emmabranch/salish-sea-whales).
-
-## Data credits
-
-::: {.source-list}
-- Ocean Biodiversity Information System (OBIS), Intergovernmental Oceanographic Commission of UNESCO. www.obis.org. Accessed November 2026.
-- Contributing datasets include Happywhale, iNaturalist research-grade observations, and British Columbia Cetacean Sightings Network observations, as published through OBIS.
-- Coastline: Statistics Canada, 2021 Census cartographic boundary file (provinces and territories), under the Open Government Licence (Canada); and US Census Bureau cartographic boundary file (states, 1:500,000).
-- Sounds: orca calls, US National Park Service, Glacier Bay National Park (public domain, via Wikimedia Commons); humpback song, NOAA Northeast Fisheries Science Center, Passive Acoustics Branch, [Sounds in the Ocean](https://www.fisheries.noaa.gov/national/science-data/sounds-ocean-mammals) (public domain); humpback with a ship, [NOAA Pacific Marine Environmental Laboratory](https://pmel.noaa.gov/acoustics/multimedia.html) (public information).
-- Ferry routes and shipping lanes: © OpenStreetMap contributors, under the Open Database Licence (ODbL), via the Overpass API.
-:::
+- **[Map](map.qmd):** a year of sightings month by month, which seasons each species visits, and how close whales come to ferry routes and shipping lanes.
+- **[Listen](listen.qmd):** orca calls, humpback song, and a humpback with a ship, drawn as live spectrograms.
+- **[About the data](about.qmd):** how the sightings were cleaned, and where every dataset comes from.

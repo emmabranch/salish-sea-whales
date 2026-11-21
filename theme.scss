@@ -1,18 +1,23 @@
-/* Whales of the Salish Sea: project colours (Salish teal) */
+/* Whales of the Salish Sea: project colours (Dusk mauve) */
 /*-- scss:defaults --*/
 
 /*-- scss:rules --*/
-:root { --eb-accent: #00708a; --eb-accent-2: #2fb6d0; --eb-accent-light: #7fd9ec; }
+:root {
+  --eb-accent: #8a4a72;
+  --eb-accent-2: #cf86ae;
+  --eb-accent-light: #f0bcd8;
+  --eb-hero-glow: rgba(207, 134, 174, 0.30);
+}
 
-/* The interactive map sits on its own dark card */
+/* Interactive map and sound widgets sit on their own dark card.
+   Each widget reports its own height, so the frame fits it exactly. */
 .whale-frame {
   display: block;
   width: 100%;
   border: 0;
   border-radius: 14px;
   background: #0d2436;
-  min-height: 600px;
-  .whale-frame.listen-frame { min-height: 0; height: 520px; }
+  height: 520px;  /* placeholder until the widget reports its height */
 }
 
 /* Scrollytelling: narrative cards and sticky charts */
@@ -29,5 +34,20 @@
 figure img, p img { max-width: 100%; height: auto; }
 .source-list li { margin-bottom: 0.3rem; }
 
-/* The hero already carries the title, so the standard title block is hidden */
-#title-block-header { display: none; }
+/* Pages without a hero: a little more space under the navbar */
+main.content:not(:has(.hero-full)) #title-block-header { margin-top: 1.5rem; }
+
+/* Home page: the hero carries the title, so the standard title block is hidden */
+body:has(.hero-full) #title-block-header { display: none; }
+
+/* Hero note is a short line of small print */
+.hero-full .hero-note { display: block; line-height: 1.5; }
+
+/* Scrolling story on phones: pin the chart to the top of the screen so the
+   text boxes pass underneath it, rather than over the middle of it
+   (same fix as the fish stock story). */
+@media (max-width: 575.98px) {
+  .cr-section .sticky-col .sticky-col-stack { padding-top: 0.75rem; align-items: start; }
+  .cr-section .sticky-col .sticky-col-stack .sticky { margin: 0 auto auto !important; }
+  .cr-section .narrative-col .narrative { box-shadow: 0 6px 20px rgba(11, 34, 51, 0.25); }
+}

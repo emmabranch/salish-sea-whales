@@ -20,12 +20,28 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--ocean); }
   body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); }
-  .whale-map { max-width: 760px; margin: 0 auto; padding: 18px 18px 14px; }
+  /* Layout: on wide screens the controls sit beside the map, so the whole
+     widget fits on a laptop screen; on narrow screens everything stacks. */
+  .whale-map { max-width: 1180px; margin: 0 auto; padding: 16px;
+               display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 24px;
+               grid-template-areas: "head" "filters" "stage" "controls" "notes"; }
+  .head { grid-area: head; }
+  .filters { grid-area: filters; }
+  .stage { grid-area: stage; }
+  .controls { grid-area: controls; }
+  .notes { grid-area: notes; }
+  @media (min-width: 820px) {
+    .whale-map { grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+                 grid-template-rows: auto auto auto 1fr;
+                 grid-template-areas: "head stage" "filters stage" "controls stage" "notes stage";
+                 align-items: start; }
+    .controls { margin-top: 4px; }
+  }
   .kicker { margin: 0; color: var(--ink-dim); font-size: 0.95rem; letter-spacing: 0.02em; }
   .month { margin: 2px 0 0; font-family: Georgia, "Times New Roman", serif; font-weight: 400;
-           font-size: clamp(2rem, 5vw, 2.8rem); line-height: 1.1; }
+           font-size: clamp(1.7rem, 4.5vw, 2.5rem); line-height: 1.1; }
   /* Fixed height so the map never jumps when a caption wraps to two lines */
-  .caption { margin: 6px 0 12px; font-size: 1.05rem; line-height: 1.4; min-height: 2.9em; }
+  .caption { margin: 6px 0 10px; font-size: 1rem; line-height: 1.4; min-height: 2.8em; }
   .species { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
   .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
           border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit;
@@ -35,14 +51,26 @@
   .chip[aria-pressed="false"] { opacity: 0.45; }
   .chip[aria-pressed="false"] .dot { background: transparent !important; outline: 2px solid currentColor; outline-offset: -2px; }
   .chip:focus-visible, .ctrl:focus-visible, input[type=range]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .stage { position: relative; width: 100%; margin: 0 auto; }
+  .stage { position: relative; width: 100%; justify-self: center; }
   .stage svg, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
   #overlay { pointer-events: none; }
   .layers { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
   .layers .label { color: var(--ink-dim); font-size: 0.85rem; align-self: center; margin-right: 2px; }
   .chip .swatch { width: 18px; height: 0; border-top: 2px solid currentColor; }
   .chip .swatch.dashed { border-top-style: dashed; }
-  .controls { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .controls { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  /* Phones: tighter controls, so the map gets as much of the screen as possible */
+  @media (max-width: 480px) {
+    .whale-map { padding: 10px 12px; }
+    .kicker, .layers .label { display: none; }
+    .month { font-size: 1.5rem; }
+    .caption { font-size: 0.9rem; margin: 2px 0 8px; min-height: 2.6em; }
+    .species, .layers { gap: 6px; margin-bottom: 6px; }
+    .chip { padding: 4px 9px; font-size: 0.8rem; gap: 6px; }
+    .chip .dot { width: 9px; height: 9px; }
+    .ctrl { width: 36px; height: 36px; }
+    .ctrl.play { width: 42px; height: 42px; }
+  }
   .ctrl { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: #13304a;
           color: var(--ink); font-size: 1rem; cursor: pointer; flex: none; }
   .ctrl.play { width: 48px; height: 48px; font-size: 1.15rem; }
@@ -60,14 +88,18 @@
 </head>
 <body>
 <section class="whale-map" aria-label="Interactive map: a year of whale sightings in the Salish Sea">
-  <p class="kicker">A year in the Salish Sea</p>
-  <h2 class="month" id="month">January</h2>
-  <p class="caption" id="caption" aria-live="polite"></p>
+  <div class="head">
+    <p class="kicker">A year in the Salish Sea</p>
+    <h2 class="month" id="month">January</h2>
+    <p class="caption" id="caption" aria-live="polite"></p>
+  </div>
 
-  <ul class="species" id="species" aria-label="Show or hide species"></ul>
-  <ul class="layers" id="layers" aria-label="Show or hide boat traffic">
-    <li class="label" aria-hidden="true">Traffic:</li>
-  </ul>
+  <div class="filters">
+    <ul class="species" id="species" aria-label="Show or hide species"></ul>
+    <ul class="layers" id="layers" aria-label="Show or hide boat traffic">
+      <li class="label" aria-hidden="true">Traffic:</li>
+    </ul>
+  </div>
 
   <div class="stage" id="stage">
     <svg id="land" aria-hidden="true"></svg>
@@ -89,12 +121,14 @@
     </div>
   </div>
 
+  <div class="notes">
   <p class="source">Each dot is a whale sighting from 2018 to 2025, pooled by month. Summer has more people watching, so compare where and when each species appears rather than raw totals. Data: OBIS (Happywhale, iNaturalist, BC Cetacean Sightings Network, and others). Coastline: Statistics Canada (Open Government Licence, Canada) and US Census Bureau. Ferry routes and shipping lanes: &copy; OpenStreetMap contributors (ODbL); boats are for show, not real positions.</p>
 
   <details>
     <summary>Show the numbers as a table</summary>
     <table id="table"></table>
   </details>
+  </div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
@@ -162,17 +196,21 @@ const LAND_D3 = rewind(LAND);
 let projection, width, height, dpr;
 
 function layout() {
-  // Fit the map to the available width, but never taller than about two
-  // thirds of the screen, so the controls stay in view
+  // Fit the map to the available width, but keep the whole widget (map and
+  // controls) within one screen, so nothing needs scrolling while it plays
   stage.style.width = "100%";
   width = stage.clientWidth;
   projection = d3.geoMercator().fitWidth(width, bounds);
   const [[, y0], [, y1]] = d3.geoPath(projection).bounds(bounds);
   const ratio = (y1 - y0) / width;
-  // Inside the story the map sits in a frame, so measure the reader's screen
+  // Inside the website the map sits in a frame, so measure the reader's screen
   let screenHeight = window.innerHeight;
   try { if (window.parent !== window) screenHeight = window.parent.innerHeight; } catch (e) {}
-  const maxHeight = Math.max(360, screenHeight * 0.68);
+  const reserve = 90;  // the site's navbar plus a little breathing room
+  const sideBySide = window.matchMedia("(min-width: 820px)").matches;
+  const stacked = ["head", "filters", "controls"]
+    .reduce((sum, c) => sum + document.querySelector("." + c).offsetHeight, 0);
+  const maxHeight = Math.max(240, screenHeight - reserve - 32 - (sideBySide ? 0 : stacked + 30));
   if (width * ratio > maxHeight) width = Math.round(maxHeight / ratio);
   stage.style.width = width + "px";
   height = Math.round(width * ratio);

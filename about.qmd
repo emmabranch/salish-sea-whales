@@ -1,0 +1,24 @@
+---
+title: "About the data"
+---
+
+```{r setup}
+source(here::here("R", "page_setup.R"))
+```
+
+## How this was made
+
+- **Data.** Occurrence records for humpback whales, orcas (killer whales), and grey whales, downloaded from [OBIS](https://obis.org) with the robis R package. The largest sources are Happywhale, iNaturalist research-grade observations, and the BC Cetacean Sightings Network.
+- **Cleaning.** `r fmt(n_raw)` records were downloaded. Records on land, records outside an approximate Salish Sea boundary, and likely duplicates (the same species, on the same day, within about 1 km) were removed, leaving `r fmt(nrow(whales))` sightings. Happywhale records one row per identified whale, so a group of four humpbacks becomes one sighting here.
+- **Effort.** The number of iNaturalist research-grade marine observations inside the boundary each year, from the OBIS statistics service.
+- **Tools.** R (tidyverse, sf, robis), D3 for the interactive map, and Quarto with the closeread extension for this page. The code is [on GitHub](https://github.com/emmabranch/salish-sea-whales).
+
+## Data credits
+
+::: {.source-list}
+- Ocean Biodiversity Information System (OBIS), Intergovernmental Oceanographic Commission of UNESCO. www.obis.org. Accessed November 2026.
+- Contributing datasets include Happywhale, iNaturalist research-grade observations, and British Columbia Cetacean Sightings Network observations, as published through OBIS.
+- Coastline: Statistics Canada, 2021 Census cartographic boundary file (provinces and territories), under the Open Government Licence (Canada); and US Census Bureau cartographic boundary file (states, 1:500,000).
+- Sounds: orca calls, US National Park Service, Glacier Bay National Park (public domain, via Wikimedia Commons); humpback song, NOAA Northeast Fisheries Science Center, Passive Acoustics Branch, [Sounds in the Ocean](https://www.fisheries.noaa.gov/national/science-data/sounds-ocean-mammals) (public domain); humpback with a ship, [NOAA Pacific Marine Environmental Laboratory](https://pmel.noaa.gov/acoustics/multimedia.html) (public information).
+- Ferry routes and shipping lanes: © OpenStreetMap contributors, under the Open Database Licence (ODbL), via the Overpass API.
+:::

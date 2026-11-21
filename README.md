@@ -14,7 +14,7 @@ An interactive data story about humpback whales, orcas, and grey whales in the S
 - Tests whether the rise in sightings reflects more whales or more watchers, using two comparisons: sightings per 1,000 iNaturalist marine observations, and humpback sightings per orca sighting on the same platforms.
 - Lets you listen: three whale recordings play with a live spectrogram drawn in the browser (Web Audio API), including a humpback with ship noise.
 - Adds ferry routes and shipping lanes from OpenStreetMap to the map, with toggles and animated boats, and asks how often each species is seen within 2 km of a route compared with what the water area alone would predict.
-- Tells the story as a scrollytelling page (Quarto with the closeread extension), with the key numbers calculated from the data at render time.
+- Presents it all as a four-page website: the story as a scrollytelling page (Quarto with the closeread extension), a map page, a listening page, and an About the data page, with the key numbers calculated from the data at render time (`R/page_setup.R`).
 
 ## Data and licences
 
@@ -23,7 +23,7 @@ An interactive data story about humpback whales, orcas, and grey whales in the S
 - **Coastline, Washington:** US Census Bureau cartographic boundary file (states, 1:500,000), downloaded with the tigris package.
 - **Ferry routes and shipping lanes:** (c) OpenStreetMap contributors, under the Open Database Licence (ODbL), downloaded through the Overpass API.
 - **Sounds:** orca calls by the US National Park Service, Glacier Bay National Park (public domain, via Wikimedia Commons); humpback song by NOAA Northeast Fisheries Science Center, Passive Acoustics Branch (public domain); humpback with a ship by NOAA Pacific Marine Environmental Laboratory (public information). None were recorded in the Salish Sea.
-- **Code:** see LICENSE.
+- **Code:** MIT licence (see [`LICENSE`](LICENSE)). Data keep their original licences, listed above.
 
 ## How to reproduce
 
