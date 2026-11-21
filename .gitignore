@@ -7,3 +7,5 @@ story/*_files/
 story/.quarto/
 /.quarto/
 .DS_Store
+data/raw/lpr_*.zip
+data/raw/statcan_provinces/
