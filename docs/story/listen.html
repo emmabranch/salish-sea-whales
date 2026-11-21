@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listen: whale sounds</title>
+<style>
+  :root { --ocean: #0d2436; --card: #13304a; --line: #2f4a5e; --ink: #f2f5f7; --ink-dim: #a9b8c4;
+          --humpback: #3987e5; --orca: #d95926; --ship: #a9b8c4; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--ocean); }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); }
+  .listen { max-width: 980px; margin: 0 auto; padding: 18px; }
+  .clips { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .clip { display: flex; gap: 12px; align-items: flex-start; text-align: left; padding: 14px;
+          border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+          font: inherit; cursor: pointer; }
+  .clip:hover { border-color: var(--ink-dim); }
+  .clip[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .clip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .icon { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+          background: var(--accent); color: #0b2233; font-size: 1rem; }
+  .clip[aria-pressed="true"] .icon { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 var(--accent); } 50% { box-shadow: 0 0 0 8px transparent; } }
+  @media (prefers-reduced-motion: reduce) { .clip[aria-pressed="true"] .icon { animation: none; } }
+  .clip h3 { margin: 0 0 4px; font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: 1.25rem; }
+  .clip p { margin: 0; color: var(--ink-dim); font-size: 0.88rem; line-height: 1.4; }
+  .scope { position: relative; margin-top: 14px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+  canvas { display: block; width: 100%; height: 220px; background: #08192a; }
+  .axis { position: absolute; left: 8px; top: 6px; bottom: 6px; color: var(--ink-dim); font-size: 0.72rem; pointer-events: none; }
+  .axis span { position: absolute; left: 0; transform: translateY(50%); white-space: nowrap; }
+  .hint[hidden] { display: none; }
+  .hint { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-dim);
+          font-size: 0.95rem; pointer-events: none; }
+  .now { margin: 10px 0 0; min-height: 1.4em; font-size: 0.95rem; }
+  .key { margin: 4px 0 0; color: var(--ink-dim); font-size: 0.82rem; }
+  .credits { margin: 12px 0 0; color: var(--ink-dim); font-size: 0.75rem; line-height: 1.45; }
+</style>
+</head>
+<body>
+<section class="listen" aria-label="Listen to whale sounds">
+  <div class="clips" id="clips"></div>
+
+  <div class="scope">
+    <canvas id="spectrogram" aria-label="Live spectrogram of the selected sound" role="img"></canvas>
+    <div class="axis" aria-hidden="true" id="axis"></div>
+    <div class="hint" id="hint">Choose a sound to see it as well as hear it</div>
+  </div>
+  <p class="now" id="now" aria-live="polite"></p>
+  <p class="key">The picture is a spectrogram: time runs left to right, pitch runs bottom to top (low pitches get extra room), and brighter means louder.</p>
+
+  <p class="credits">Recordings: orca calls by the US National Park Service, Glacier Bay National Park, Alaska (public domain, via Wikimedia Commons). Humpback song by NOAA Northeast Fisheries Science Center, Passive Acoustics Branch (public domain). Humpback with a ship by NOAA Pacific Marine Environmental Laboratory, Stellwagen Bank National Marine Sanctuary (public information). None of these were recorded in the Salish Sea, but the same species make similar sounds there. Volume is raised for listening; pitch and speed are unchanged.</p>
+</section>
+
+<script>
+const CLIPS = [
+  { file: "assets/audio/orca-calls.m4a", title: "Orca", colour: "--orca", gain: 3,
+    text: "Calls and echolocation clicks. Each call shows up as a little ladder of stripes." },
+  { file: "assets/audio/humpback-song.m4a", title: "Humpback whale", colour: "--humpback", gain: 1.5,
+    text: "Song: long moans and whoops that rise and fall, lower and slower than an orca." },
+  { file: "assets/audio/humpback-and-ship.m4a", title: "Humpback and a ship", colour: "--ship", gain: 1.5,
+    text: "Humpback calls with a ship nearby. Watch the ship's noise fill the bottom of the picture." }
+];
+const css = getComputedStyle(document.documentElement);
+const list = document.getElementById("clips");
+const canvas = document.getElementById("spectrogram");
+const ctx = canvas.getContext("2d");
+// A hidden copy of the picture, used to scroll it left cleanly each frame
+const buffer = document.createElement("canvas");
+const bctx = buffer.getContext("2d");
+const audio = new Audio();
+let audioCtx, analyser, gain, source, data, current = -1, raf = null;
+
+// Colour scale: deep navy, through teal, to near white
+function colour(v) {
+  const t = v / 255;
+  const stops = [[8, 25, 42], [20, 80, 120], [47, 182, 208], [127, 217, 236], [242, 245, 247]];
+  const x = t * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(x)), f = x - i;
+  const c = stops[i].map((s, k) => Math.round(s + (stops[i + 1][k] - s) * f));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+function sizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * dpr;
+  canvas.height = canvas.clientHeight * dpr;
+  buffer.width = canvas.width;
+  buffer.height = canvas.height;
+  ctx.fillStyle = "#08192a";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function setup() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0.2;
+  // Loudness range mapped onto the colour scale (keeps noisy clips from turning white)
+  analyser.minDecibels = -95;
+  analyser.maxDecibels = -15;
+  gain = audioCtx.createGain();
+  // A compressor stops the boosted clips from distorting on loud moments
+  const limiter = audioCtx.createDynamicsCompressor();
+  limiter.threshold.value = -6;
+  limiter.ratio.value = 12;
+  source = audioCtx.createMediaElementSource(audio);
+  source.connect(gain);
+  gain.connect(limiter);
+  limiter.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  data = new Uint8Array(analyser.frequencyBinCount);
+}
+
+function draw() {
+  analyser.getByteFrequencyData(data);
+  const w = canvas.width, h = canvas.height, step = 2;
+  // Shift the picture left, then paint the newest slice on the right
+  bctx.clearRect(0, 0, w, h);
+  bctx.drawImage(canvas, 0, 0);
+  ctx.fillStyle = "#08192a";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(buffer, -step, 0);
+  const binsShown = Math.floor(MAX_FREQ / (audioCtx.sampleRate / 2) * data.length);
+  for (let y = 0; y < h; y++) {
+    // Square-root pitch scale: low sounds (humpbacks, ships) get more room
+    const pos = 1 - y / h;
+    const bin = Math.floor(pos * pos * binsShown);
+    ctx.fillStyle = colour(data[bin]);
+    ctx.fillRect(w - step, y, step, 1);
+  }
+  if (!audio.paused) raf = requestAnimationFrame(draw);
+}
+
+function updateButtons() {
+  list.querySelectorAll(".clip").forEach((b, i) => {
+    const playing = i === current && !audio.paused;
+    b.setAttribute("aria-pressed", String(playing));
+    b.querySelector(".icon").innerHTML = playing ? "&#10074;&#10074;" : "&#9654;&#xFE0E;";
+    b.setAttribute("aria-label", (playing ? "Pause " : "Play ") + CLIPS[i].title);
+  });
+}
+
+CLIPS.forEach((c, i) => {
+  const b = document.createElement("button");
+  b.className = "clip";
+  b.style.setProperty("--accent", css.getPropertyValue(c.colour).trim());
+  b.innerHTML = `<span class="icon" aria-hidden="true">&#9654;&#xFE0E;</span>` +
+                `<span><h3>${c.title}</h3><p>${c.text}</p></span>`;
+  b.addEventListener("click", async () => {
+    setup();
+    if (audioCtx.state === "suspended") await audioCtx.resume();
+    if (current === i && !audio.paused) { audio.pause(); return; }
+    if (current !== i) { audio.src = c.file; current = i; gain.gain.value = c.gain; sizeCanvas(); }
+    document.getElementById("hint").hidden = true;
+    document.getElementById("now").textContent = "Playing: " + c.title;
+    await audio.play();
+  });
+  list.appendChild(b);
+});
+
+audio.addEventListener("play", () => { updateButtons(); cancelAnimationFrame(raf); draw(); });
+audio.addEventListener("pause", () => { updateButtons(); });
+audio.addEventListener("ended", () => {
+  updateButtons();
+  document.getElementById("now").textContent = "Finished: " + CLIPS[current].title;
+});
+
+// Pitch labels, placed on the same square-root scale as the picture
+const MAX_FREQ = 6000;
+const axis = document.getElementById("axis");
+[0, 500, 1000, 2000, 4000].forEach(f => {
+  const s = document.createElement("span");
+  s.textContent = f === 0 ? "0" : (f >= 1000 ? f / 1000 + " kHz" : f + " Hz");
+  s.style.bottom = (Math.sqrt(f / MAX_FREQ) * 100) + "%";
+  axis.appendChild(s);
+});
+
+sizeCanvas();
+window.addEventListener("resize", sizeCanvas);
+
+// Tell the story page how tall this section is, so its frame fits exactly
+const section = document.querySelector(".listen");
+function reportHeight() {
+  if (window.parent !== window) {
+    window.parent.postMessage({ listenHeight: Math.ceil(section.getBoundingClientRect().height) }, "*");
+  }
+}
+new ResizeObserver(reportHeight).observe(section);
+window.addEventListener("load", reportHeight);
+</script>
+</body>
+</html>

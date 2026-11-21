@@ -6,3 +6,4 @@ project:
   resources:
     - story/assets/
     - story/year-in-salish-sea.html
+    - story/listen.html

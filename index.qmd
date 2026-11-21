@@ -81,6 +81,22 @@ The three species keep very different calendars.
 - **Humpbacks arrive in summer and leave in autumn.** `r hump_summer`% of their sightings fall between June and October, mostly in Juan de Fuca Strait and the central Strait of Georgia.
 - **Orcas are the most year-round of the three.** They peak from May to September but turn up in every month.
 
+## Listen
+
+Whales are easier to hear than to see. Press a sound to play it, and watch it draw itself as a spectrogram. Orca calls sit high and sharp, humpback song lower and slower, and ship noise spreads across the same low pitches humpbacks use. Headphones help, especially for the humpbacks.
+
+```{=html}
+<iframe class="whale-frame listen-frame" id="listen-widget" src="story/listen.html"
+        title="Whale sounds with a live spectrogram" loading="lazy"></iframe>
+<script>
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data.listenHeight) {
+      document.getElementById("listen-widget").style.height = e.data.listenHeight + "px";
+    }
+  });
+</script>
+```
+
 ## More whales, or more watchers?
 
 :::::: {.cr-section}
@@ -128,7 +144,6 @@ The broader lesson applies well beyond whales. Whenever counts come from people 
 - **Data.** Occurrence records for humpback whales, orcas (killer whales), and grey whales, downloaded from [OBIS](https://obis.org) with the robis R package. The largest sources are Happywhale, iNaturalist research-grade observations, and the BC Cetacean Sightings Network.
 - **Cleaning.** `r fmt(n_raw)` records were downloaded. Records on land, records outside an approximate Salish Sea boundary, and likely duplicates (the same species, on the same day, within about 1 km) were removed, leaving `r fmt(nrow(whales))` sightings. Happywhale records one row per identified whale, so a group of four humpbacks becomes one sighting here.
 - **Effort.** The number of iNaturalist research-grade marine observations inside the boundary each year, from the OBIS statistics service.
-- **Limits.** These are opportunistic records, not surveys. They show change in sightings relative to effort, not population size. Early years have small numbers. The current year is left out of trends because it is not finished.
 - **Tools.** R (tidyverse, sf, robis), D3 for the interactive map, and Quarto with the closeread extension for this page. The code is [on GitHub](https://github.com/emmabranch/salish-sea-whales).
 
 ## Data credits
@@ -137,4 +152,5 @@ The broader lesson applies well beyond whales. Whenever counts come from people 
 - Ocean Biodiversity Information System (OBIS), Intergovernmental Oceanographic Commission of UNESCO. www.obis.org. Accessed November 2026.
 - Contributing datasets include Happywhale, iNaturalist research-grade observations, and British Columbia Cetacean Sightings Network observations, as published through OBIS.
 - Coastline: Statistics Canada, 2021 Census cartographic boundary file (provinces and territories), under the Open Government Licence (Canada); and US Census Bureau cartographic boundary file (states, 1:500,000).
+- Sounds: orca calls, US National Park Service, Glacier Bay National Park (public domain, via Wikimedia Commons); humpback song, NOAA Northeast Fisheries Science Center, Passive Acoustics Branch, [Sounds in the Ocean](https://www.fisheries.noaa.gov/national/science-data/sounds-ocean-mammals) (public domain); humpback with a ship, [NOAA Pacific Marine Environmental Laboratory](https://pmel.noaa.gov/acoustics/multimedia.html) (public information).
 :::

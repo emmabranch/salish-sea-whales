@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Emma Branch">
-<meta name="dcterms.date" content="2026-11-20">
+<meta name="dcterms.date" content="2026-11-21">
 <meta name="description" content="An interactive data story about humpback whales, orcas, and grey whales in the Salish Sea, and how much of the rise in sightings is really more people watching.">
 
 <title>Whales of the Salish Sea</title>
@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="index_files/libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="index_files/libs/bootstrap/bootstrap-df42393da1f69392754a48aae5818675.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="index_files/libs/bootstrap/bootstrap-dark-371bd2fbaa45a64628d1cf25bc4427bd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="index_files/libs/bootstrap/bootstrap-df42393da1f69392754a48aae5818675.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/bootstrap/bootstrap-b0cb0212d7103d70cd0baf52affd128f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/bootstrap/bootstrap-dark-adc0a0b0fac109cac183fbae8bd99fd6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/bootstrap/bootstrap-b0cb0212d7103d70cd0baf52affd128f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script src="index_files/libs/quarto-contrib/intersection-observer-polyfill-1.0.0/intersection-observer.js"></script>
 <script src="index_files/libs/quarto-contrib/scrollama-3.2.0/scrollama.min.js"></script>
 <script src="index_files/libs/quarto-contrib/closeread-0.1.0/closeread.js"></script>
@@ -86,8 +86,8 @@ ul.task-list li input[type="checkbox"] {
       <!-- user-provided yaml closeread style options -->
       <style>
         :root {
-          --cr-narrative-background-color-sidebar: transparent;
---cr-section-background-color: transparent;
+          --cr-section-background-color: transparent;
+--cr-narrative-background-color-sidebar: transparent;
         }
       </style>
     
@@ -117,7 +117,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 20, 2026</p>
+      <p class="date">November 21, 2026</p>
     </div>
   </div>
   
@@ -151,6 +151,18 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>Humpbacks arrive in summer and leave in autumn.</strong> 86% of their sightings fall between June and October, mostly in Juan de Fuca Strait and the central Strait of Georgia.</li>
 <li><strong>Orcas are the most year-round of the three.</strong> They peak from May to September but turn up in every month.</li>
 </ul>
+</section>
+<section id="listen" class="level2">
+<h2 class="anchored" data-anchor-id="listen">Listen</h2>
+<p>Whales are easier to hear than to see. Press a sound to play it, and watch it draw itself as a spectrogram. Orca calls sit high and sharp, humpback song lower and slower, and ship noise spreads across the same low pitches humpbacks use. Headphones help, especially for the humpbacks.</p>
+<iframe class="whale-frame listen-frame" id="listen-widget" src="story/listen.html" title="Whale sounds with a live spectrogram" loading="lazy"></iframe>
+<script>
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data.listenHeight) {
+      document.getElementById("listen-widget").style.height = e.data.listenHeight + "px";
+    }
+  });
+</script>
 </section>
 <section id="more-whales-or-more-watchers" class="level2">
 <h2 class="anchored" data-anchor-id="more-whales-or-more-watchers">More whales, or more watchers?</h2>
@@ -224,7 +236,6 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>Data.</strong> Occurrence records for humpback whales, orcas (killer whales), and grey whales, downloaded from <a href="https://obis.org">OBIS</a> with the robis R package. The largest sources are Happywhale, iNaturalist research-grade observations, and the BC Cetacean Sightings Network.</li>
 <li><strong>Cleaning.</strong> 22,673 records were downloaded. Records on land, records outside an approximate Salish Sea boundary, and likely duplicates (the same species, on the same day, within about 1 km) were removed, leaving 13,408 sightings. Happywhale records one row per identified whale, so a group of four humpbacks becomes one sighting here.</li>
 <li><strong>Effort.</strong> The number of iNaturalist research-grade marine observations inside the boundary each year, from the OBIS statistics service.</li>
-<li><strong>Limits.</strong> These are opportunistic records, not surveys. They show change in sightings relative to effort, not population size. Early years have small numbers. The current year is left out of trends because it is not finished.</li>
 <li><strong>Tools.</strong> R (tidyverse, sf, robis), D3 for the interactive map, and Quarto with the closeread extension for this page. The code is <a href="https://github.com/emmabranch/salish-sea-whales">on GitHub</a>.</li>
 </ul>
 </section>
@@ -235,6 +246,7 @@ ul.task-list li input[type="checkbox"] {
 <li>Ocean Biodiversity Information System (OBIS), Intergovernmental Oceanographic Commission of UNESCO. www.obis.org. Accessed November 2026.</li>
 <li>Contributing datasets include Happywhale, iNaturalist research-grade observations, and British Columbia Cetacean Sightings Network observations, as published through OBIS.</li>
 <li>Coastline: Statistics Canada, 2021 Census cartographic boundary file (provinces and territories), under the Open Government Licence (Canada); and US Census Bureau cartographic boundary file (states, 1:500,000).</li>
+<li>Sounds: orca calls, US National Park Service, Glacier Bay National Park (public domain, via Wikimedia Commons); humpback song, NOAA Northeast Fisheries Science Center, Passive Acoustics Branch, <a href="https://www.fisheries.noaa.gov/national/science-data/sounds-ocean-mammals">Sounds in the Ocean</a> (public domain); humpback with a ship, <a href="https://pmel.noaa.gov/acoustics/multimedia.html">NOAA Pacific Marine Environmental Laboratory</a> (public information).</li>
 </ul>
 </div>
 </section>
