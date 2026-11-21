@@ -9,3 +9,4 @@ story/.quarto/
 .DS_Store
 data/raw/lpr_*.zip
 data/raw/statcan_provinces/
+**/*.quarto_ipynb

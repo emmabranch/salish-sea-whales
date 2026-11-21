@@ -157,7 +157,10 @@ function layout() {
   projection = d3.geoMercator().fitWidth(width, bounds);
   const [[, y0], [, y1]] = d3.geoPath(projection).bounds(bounds);
   const ratio = (y1 - y0) / width;
-  const maxHeight = Math.max(360, window.innerHeight * 0.68);
+  // Inside the story the map sits in a frame, so measure the reader's screen
+  let screenHeight = window.innerHeight;
+  try { if (window.parent !== window) screenHeight = window.parent.innerHeight; } catch (e) {}
+  const maxHeight = Math.max(360, screenHeight * 0.68);
   if (width * ratio > maxHeight) width = Math.round(maxHeight / ratio);
   stage.style.width = width + "px";
   height = Math.round(width * ratio);
@@ -170,6 +173,11 @@ function layout() {
   svg.append("rect").attr("width", width).attr("height", height).attr("fill", "var(--ocean)");
   svg.append("path").datum(LAND_D3).attr("d", d3.geoPath(projection)).attr("fill", "var(--land)");
   POINTS.forEach(p => { const xy = projection([p[0], p[1]]); p.x = xy[0]; p.y = xy[1]; });
+  // Tell the story page how tall this map is, so its frame fits exactly
+  if (window.parent !== window) {
+    requestAnimationFrame(() => window.parent.postMessage(
+      { whaleMapHeight: document.documentElement.scrollHeight }, "*"));
+  }
 }
 
 // --- Drawing ---

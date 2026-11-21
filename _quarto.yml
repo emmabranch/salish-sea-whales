@@ -1,0 +1,8 @@
+project:
+  type: default
+  output-dir: docs
+  render:
+    - index.qmd
+  resources:
+    - story/assets/
+    - story/year-in-salish-sea.html
