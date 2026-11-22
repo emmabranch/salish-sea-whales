@@ -1,5 +1,6 @@
 ---
 pagetitle: "Whales of the Salish Sea: more whales, or more watchers?"
+title-prefix: ""  # stops Quarto adding the site name to the end of the page title
 author: "Emma Branch"
 description: "An interactive data story about humpback whales, orcas, and grey whales in the Salish Sea, and how much of the rise in sightings is really more people watching."
 image: story/assets/year-in-salish-sea.png
