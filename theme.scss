@@ -13,23 +13,29 @@
    Each widget reports its own height, so the frame fits it exactly. */
 .whale-frame {
   display: block;
-  width: 100%;
-  border: 0;
-  border-radius: 14px;
+  width: calc(100% - 6px);
+  border: 3px solid #111111;
+  box-sizing: content-box;  /* the outline sits outside the reported height */
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #111111;
   background: #0d2436;
   height: 520px;  /* placeholder until the widget reports its height */
 }
 
 /* Scrollytelling: narrative cards and sticky charts */
+.cr-section { --cr-narrative-border-radius: 0; }
 .cr-section .narrative-col .narrative {
   background: #ffffff;
-  border-left: 4px solid var(--eb-accent);
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(16, 42, 67, 0.08), 0 8px 20px rgba(16, 42, 67, 0.06);
+  border: 2px solid #111111;
+  border-left: 8px solid var(--eb-accent);
+  border-radius: 0 !important;
+  box-shadow: 4px 4px 0 #111111;
   padding: 1rem 1.2rem;
   font-size: 1.02rem;
 }
-.cr-section .sticky-col img { border-radius: 10px; box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08); }
+.cr-section .sticky-col img { border: 2px solid #111111; border-radius: 0; box-shadow: 4px 4px 0 #111111; background: #ffffff; }
+/* Room for the chart outlines and shadows */
+.cr-section .sticky-col .sticky-col-stack { padding: 0 1.5rem 0 0.5rem; }
 
 figure img, p img { max-width: 100%; height: auto; }
 .source-list li { margin-bottom: 0.3rem; }
@@ -47,7 +53,7 @@ body:has(.hero-full) #title-block-header { display: none; }
    text boxes pass underneath it, rather than over the middle of it
    (same fix as the fish stock story). */
 @media (max-width: 575.98px) {
-  .cr-section .sticky-col .sticky-col-stack { padding-top: 0.75rem; align-items: start; }
+  .cr-section .sticky-col .sticky-col-stack { padding: 1rem 1rem 0 0.75rem; align-items: start; }
   .cr-section .sticky-col .sticky-col-stack .sticky { margin: 0 auto auto !important; }
-  .cr-section .narrative-col .narrative { box-shadow: 0 6px 20px rgba(11, 34, 51, 0.25); }
+  .cr-section .narrative-col .narrative { box-shadow: 4px 4px 0 #111111; }
 }

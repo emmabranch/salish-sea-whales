@@ -11,13 +11,17 @@ project:
     - story/year-in-salish-sea.html
     - story/listen.html
     - .nojekyll
+    - images/motif.svg
 
 website:
   title: "Whales of the Salish Sea"
   site-url: https://emmabranch.github.io/salish-sea-whales/
   repo-url: https://github.com/emmabranch/salish-sea-whales
+  favicon: images/favicon.png
   image: story/assets/year-in-salish-sea.png
   navbar:
+    logo: images/motif.svg
+    logo-alt: ""
     left:
       - href: index.qmd
         text: Story

@@ -12,7 +12,7 @@ format:
     cr-style:
       narrative-background-color-sidebar: transparent
       section-background-color: transparent
-      narrative-background-color-overlay: "rgba(11, 34, 51, 0.92)"
+      narrative-background-color-overlay: "rgba(17, 17, 17, 0.92)"
       narrative-text-color-overlay: "#ffffff"
 ---
 
@@ -22,6 +22,10 @@ source(here::here("R", "hero_stripes.R"))
 ```
 
 ::::: {.hero-full .column-screen}
+
+```{=html}
+<img class="hero-motif" src="images/motif.svg" alt="">
+```
 
 ```{r hero-bg}
 #| output: asis
@@ -41,10 +45,6 @@ Whale sightings in the Salish Sea have soared. Some of that is whales, and some 
 [Background: one stripe per year since 2000, brighter in years with more humpback whale sightings. Data: OBIS (Ocean Biodiversity Information System), 1971 to 2026, Salish Sea only.]{.hero-note}
 
 ::::
-
-```{=html}
-<svg class="hero-wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true"><path d="M0,40 C240,80 480,0 720,30 C960,60 1200,10 1440,40 L1440,80 L0,80 Z"></path></svg>
-```
 
 :::::
 
