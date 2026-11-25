@@ -13,44 +13,34 @@
 
 library(tidyverse)
 library(here)
+source(here("R", "theme_eb.R"))   # shared chart style from the brand kit
+eb_use("salish-sea-whales")
 
 story  <- readRDS(here("data", "processed", "story_data.rds"))
 effort <- readRDS(here("data", "processed", "effort_by_year.rds"))
 last_full_year <- as.integer(format(Sys.Date(), "%Y")) - 1
 
 # --- Shared look -------------------------------------------------------------
-species_colours <- c("Humpback whale" = "#2a78d6",
-                     "Orca"           = "#eb6834",
-                     "Grey whale"     = "#1baf7a")
-ink      <- "#1b2733"
-ink_soft <- "#5b6670"
-grid_col <- "#e6e5e1"
-watcher  <- "#7a7f86"   # neutral grey for "people looking"
+# Brand colours for the three species: lines and points use the deeper versions,
+# filled shapes (calendar wedges, bars) the bright inks with an ink outline
+species_colours <- c("Humpback whale" = "#2340FF",
+                     "Orca"           = "#E0431B",
+                     "Grey whale"     = "#00664B")
+species_fills   <- c("Humpback whale" = "#2340FF",
+                     "Orca"           = "#FF5A36",
+                     "Grey whale"     = "#00B386")
+ink      <- eb_col$ink
+ink_soft <- eb_col$muted
+grid_col <- eb_col$grid
+watcher  <- "#8C8373"   # neutral warm grey for "people looking"
 
 theme_story <- function() {
-  theme_minimal(base_size = 13) +
-    theme(
-      text                = element_text(colour = ink),
-      plot.title          = element_text(family = "serif", size = 19, colour = ink,
-                                         margin = margin(0, 0, 4, 0)),
-      plot.subtitle       = element_text(colour = ink_soft, size = 12,
-                                         margin = margin(0, 0, 12, 0)),
-      plot.caption        = element_text(colour = ink_soft, size = 9, hjust = 0,
-                                         margin = margin(12, 0, 0, 0)),
-      plot.title.position = "plot",
-      plot.caption.position = "plot",
-      axis.text           = element_text(colour = ink_soft),
-      axis.title          = element_text(colour = ink_soft, size = 11),
-      panel.grid.major    = element_line(colour = grid_col, linewidth = 0.3),
-      panel.grid.minor    = element_blank(),
-      legend.position     = "none",
-      plot.background     = element_rect(fill = "white", colour = NA),
-      plot.margin         = margin(14, 18, 10, 14)
-    )
+  theme_eb(base_size = 13) +
+    theme(legend.position = "none", plot.margin = margin(14, 18, 10, 14))
 }
 save_chart <- function(plot, file, width = 8, height = 5) {
   ggsave(here("story", "assets", file), plot, width = width, height = height,
-         dpi = 200, bg = "white")
+         dpi = 300, device = ragg::agg_png)
   message("Saved story/assets/", file)
 }
 source_note <- "Data: OBIS (Happywhale, iNaturalist). Salish Sea sightings, duplicates removed."
@@ -72,20 +62,22 @@ calendar <- calendar |>
 top <- max(calendar$share)
 
 calendar_plot <- ggplot(calendar, aes(month, share, fill = common)) +
-  geom_col(width = 0.92) +
-  geom_text(aes(y = top * 1.12, label = label), colour = ink_soft, size = 3.2) +
-  scale_fill_manual(values = species_colours) +
+  geom_col(width = 0.92, colour = ink, linewidth = 0.25) +
+  geom_text(aes(y = top * 1.12, label = label), colour = ink_soft, size = 3.2, family = .eb$mono) +
+  scale_fill_manual(values = species_fills) +
   scale_x_continuous(limits = c(0.5, 12.5), breaks = NULL) +
   scale_y_continuous(limits = c(-top * 0.35, top * 1.2), breaks = NULL) +
   coord_polar(start = -pi / 12) +
   facet_wrap(~ panel) +
   labs(title = "When each species visits",
        subtitle = "Share of each species' sightings by month, 2018 to 2025. The year runs clockwise from January at the top.",
-       caption = str_wrap(paste(source_note, "Summer has more watchers for every species, so compare timing, not size."), 120)) +
+       caption = str_wrap(paste(source_note, "Summer has more watchers for every species, so compare timing, not size."), 105)) +
   theme_story() +
-  theme(panel.grid.major = element_blank(), axis.text = element_blank(),
-        axis.title = element_blank(),
-        strip.text = element_text(family = "serif", size = 14, colour = ink, lineheight = 1.1),
+  theme(panel.grid.major = element_blank(), panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(), axis.text = element_blank(),
+        axis.title = element_blank(), axis.line.x = element_blank(), axis.ticks.x = element_blank(),
+        strip.text = element_text(family = .eb$sans_heavy, face = "plain", size = 14, colour = ink,
+                                  lineheight = 1.1, hjust = 0.5),
         panel.spacing = unit(1.5, "lines"))
 
 save_chart(calendar_plot, "whale-calendar.png", width = 9, height = 4.8)
@@ -150,7 +142,7 @@ rate_plot <- ggplot(rate, aes(year, per_1000_observations, colour = common)) +
   labs(title = "After allowing for watchers, humpbacks still rose",
        subtitle = "Whale sightings per 1,000 iNaturalist marine observations in the Salish Sea",
        x = NULL, y = "Sightings per 1,000 observations",
-       caption = str_wrap("Data: OBIS (iNaturalist research-grade observations). As people log more tide pools and birds, every whale rate is diluted over time.", 120)) +
+       caption = str_wrap("Data: OBIS (iNaturalist research-grade observations). As people log more tide pools and birds, every whale rate is diluted over time.", 105)) +
   theme_story()
 
 save_chart(rate_plot, "per-1000-observations.png")
@@ -160,14 +152,14 @@ ratio <- effort$ratio |>
   filter(year >= 2010, year <= last_full_year)
 
 ratio_plot <- ggplot(ratio, aes(year, humpbacks_per_orca)) +
-  geom_col(fill = species_colours[["Humpback whale"]], width = 0.7) +
+  geom_col(fill = species_fills[["Humpback whale"]], colour = ink, linewidth = 0.3, width = 0.7) +
   geom_hline(yintercept = 1, colour = ink, linewidth = 0.4, linetype = "dashed") +
   scale_x_continuous(breaks = seq(2010, last_full_year, 2)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.08))) +
   labs(title = "Humpbacks overtook orcas",
        subtitle = "Humpback sightings for every orca sighting, on the same platforms. Dashed line: equal numbers.",
        x = NULL, y = "Humpbacks per orca",
-       caption = str_wrap(paste(source_note, "Early years have small numbers, so single years jump around."), 120)) +
+       caption = str_wrap(paste(source_note, "Early years have small numbers, so single years jump around."), 105)) +
   theme_story()
 
 save_chart(ratio_plot, "humpbacks-per-orca.png")

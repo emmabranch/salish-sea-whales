@@ -4,22 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A year in the Salish Sea</title>
+<link rel="stylesheet" href="https://fonts.bunny.net/css?family=bricolage-grotesque:400,700,800|space-mono:400,700&display=swap">
 <style>
   :root {
-    --ocean: #0d2436;
-    --land: #1e3446;
-    --ink: #f2f5f7;
-    --ink-dim: #a9b8c4;
-    --line: #2f4a5e;
-    --humpback: #3987e5;
-    --orca: #d95926;
-    --grey: #199e70;
-    --ferry: #f3e3b5;
-    --lane: #8fb3c9;
+    /* Brand kit, ink and paper: pale sea, paper land, ink text */
+    --ocean: #DCE6EA;
+    --land: #D3C9B5;   /* warm sand, so land and sea read clearly */
+    --ink: #111111;
+    --ink-dim: #5A544A;
+    --line: #111111;
+    --humpback: #2340FF;
+    --orca: #E0431B;
+    --grey: #00664B;
+    --ferry: #111111;
+    --lane: #5A544A;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; background: var(--ocean); }
-  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); }
+  html, body { margin: 0; background: #F3EEE3; }
+  body { font-family: "Bricolage Grotesque", system-ui, sans-serif; color: var(--ink); }
   /* Layout: on wide screens the controls sit beside the map, so the whole
      widget fits on a laptop screen; on narrow screens everything stacks. */
   .whale-map { max-width: 1180px; margin: 0 auto; padding: 16px;
@@ -38,13 +40,13 @@
     .controls { margin-top: 4px; }
   }
   .kicker { margin: 0; color: var(--ink-dim); font-size: 0.95rem; letter-spacing: 0.02em; }
-  .month { margin: 2px 0 0; font-family: Georgia, "Times New Roman", serif; font-weight: 400;
+  .month { margin: 2px 0 0; font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; letter-spacing: -0.02em;
            font-size: clamp(1.7rem, 4.5vw, 2.5rem); line-height: 1.1; }
   /* Fixed height so the map never jumps when a caption wraps to two lines */
   .caption { margin: 6px 0 10px; font-size: 1rem; line-height: 1.4; min-height: 2.8em; }
   .species { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
-  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
-          border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit;
+  .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 0;
+          border: 2px solid var(--line); background: #FFFFFF; color: var(--ink); font: inherit;
           font-size: 0.95rem; cursor: pointer; }
   .chip .dot { width: 11px; height: 11px; border-radius: 50%; }
   .chip .count { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
@@ -71,7 +73,7 @@
     .ctrl { width: 36px; height: 36px; }
     .ctrl.play { width: 42px; height: 42px; }
   }
-  .ctrl { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: #13304a;
+  .ctrl { width: 40px; height: 40px; border-radius: 0; border: 2px solid var(--line); background: #FFFFFF;
           color: var(--ink); font-size: 1rem; cursor: pointer; flex: none; }
   .ctrl.play { width: 48px; height: 48px; font-size: 1.15rem; }
   .slider { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -84,6 +86,9 @@
   th, td { padding: 4px 8px; text-align: right; border-bottom: 1px solid var(--line); color: var(--ink); }
   th:first-child, td:first-child { text-align: left; }
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Brand type: Bricolage Grotesque, with Space Mono for labels and small print */
+  .kicker, .ticks, .source, .chip .count, .layers .label, details { font-family: "Space Mono", ui-monospace, monospace; }
 </style>
 </head>
 <body>
@@ -261,7 +266,7 @@ function drawTraffic() {
         const boat = g.append("path")
           .attr("d", li === 0 ? "M-5,-2.2 L4,-2.2 L6.5,0 L4,2.2 L-5,2.2 Z" : "M-6.5,-2.2 L4.5,-2.2 L7,0 L4.5,2.2 L-6.5,2.2 Z")
           .attr("fill", li === 0 ? "#ffffff" : layer.colour)
-          .attr("stroke", "#0d2436").attr("stroke-width", 0.8);
+          .attr("stroke", "#111111").attr("stroke-width", 0.8);
         boats.push({ el: boat, line: this, len, kind: li,
                      pos: Math.random() * len, dir: 1,
                      speed: (li === 0 ? 26 : 12) * (0.8 + Math.random() * 0.4) });

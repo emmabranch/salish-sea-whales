@@ -4,37 +4,43 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Listen: whale sounds</title>
+<link rel="stylesheet" href="https://fonts.bunny.net/css?family=bricolage-grotesque:400,700,800|space-mono:400,700&display=swap">
 <style>
-  :root { --ocean: #0d2436; --card: #13304a; --line: #2f4a5e; --ink: #f2f5f7; --ink-dim: #a9b8c4;
-          --humpback: #3987e5; --orca: #d95926; --ship: #a9b8c4; }
+  /* Brand kit, ink and paper. The spectrogram itself stays dark so the sound shows. */
+  :root { --ocean: #F3EEE3; --card: #FFFFFF; --line: #111111; --ink: #111111; --ink-dim: #5A544A;
+          --humpback: #2340FF; --orca: #E0431B; --ship: #8C8373; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--ocean); }
-  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); }
+  body { font-family: "Bricolage Grotesque", system-ui, sans-serif; color: var(--ink); }
   .listen { max-width: 980px; margin: 0 auto; padding: 18px; }
   .clips { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
   .clip { display: flex; gap: 12px; align-items: flex-start; text-align: left; padding: 14px;
-          border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+          border-radius: 0; border: 2px solid var(--line); background: var(--card); color: var(--ink);
+          box-shadow: 4px 4px 0 #111111;
           font: inherit; cursor: pointer; }
   .clip:hover { border-color: var(--ink-dim); }
   .clip[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
   .clip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .icon { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
-          background: var(--accent); color: #0b2233; font-size: 1rem; }
+          background: var(--accent); color: #FFFFFF; font-size: 1rem; }
   .clip[aria-pressed="true"] .icon { animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 var(--accent); } 50% { box-shadow: 0 0 0 8px transparent; } }
   @media (prefers-reduced-motion: reduce) { .clip[aria-pressed="true"] .icon { animation: none; } }
-  .clip h3 { margin: 0 0 4px; font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: 1.25rem; }
+  .clip h3 { margin: 0 0 4px; font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.25rem; }
   .clip p { margin: 0; color: var(--ink-dim); font-size: 0.88rem; line-height: 1.4; }
-  .scope { position: relative; margin-top: 14px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); }
+  .scope { position: relative; margin-top: 14px; border-radius: 0; overflow: hidden; border: 2px solid var(--line); }
   canvas { display: block; width: 100%; height: 220px; background: #08192a; }
-  .axis { position: absolute; left: 8px; top: 6px; bottom: 6px; color: var(--ink-dim); font-size: 0.72rem; pointer-events: none; }
+  .axis { position: absolute; left: 8px; top: 6px; bottom: 6px; color: #C9D3DA; font-size: 0.72rem; pointer-events: none;
+          font-family: "Space Mono", monospace; }
   .axis span { position: absolute; left: 0; transform: translateY(50%); white-space: nowrap; }
   .hint[hidden] { display: none; }
-  .hint { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-dim);
+  .hint { position: absolute; inset: 0; display: grid; place-items: center; color: #C9D3DA;
           font-size: 0.95rem; pointer-events: none; }
   .now { margin: 10px 0 0; min-height: 1.4em; font-size: 0.95rem; }
   .key { margin: 4px 0 0; color: var(--ink-dim); font-size: 0.82rem; }
   .credits { margin: 12px 0 0; color: var(--ink-dim); font-size: 0.75rem; line-height: 1.45; }
+
+  .key, .credits { font-family: "Space Mono", ui-monospace, monospace; }
 </style>
 </head>
 <body>
