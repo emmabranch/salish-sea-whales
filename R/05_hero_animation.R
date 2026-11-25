@@ -3,12 +3,13 @@
 # Salish Sea whales: the hero animation, "A year in the Salish Sea"
 #
 # Twelve months of whale sightings (2018 to 2025 pooled), fading from one
-# month to the next on a dark ocean background, with a one-line caption per
-# month shown under the month name. Each frame is drawn with ggplot2 and the frames are joined into a
-# video with the av package. Saves:
-#   story/assets/year-in-salish-sea.mp4   the animation (loops on the site)
-#   story/assets/year-in-salish-sea.png   a still of July, shown before the
-#                                         video loads and when motion is off
+# month to the next, with a one-line caption per month shown under the month
+# name, in the site's ink-and-paper look. Each frame is drawn with ggplot2 and
+# the frames are joined into a video with the av package. Saves:
+#   story/assets/year-in-salish-sea.mp4   the animation (not on the site now:
+#                                         the interactive map replaced it)
+#   story/assets/year-in-salish-sea.png   a still of July, used as the site's
+#                                         preview image when a link is shared
 # =============================================================================
 
 library(tidyverse)
@@ -19,16 +20,18 @@ library(av)
 story <- readRDS(here("data", "processed", "story_data.rds"))
 
 # --- Look --------------------------------------------------------------------
-ocean   <- "#0d2436"   # deep navy water
-land_c  <- "#1e3446"   # land, a shade lighter than the water
-ink     <- "#f2f5f7"   # light text
-ink_dim <- "#a9b8c4"   # secondary text
+# Same ink-and-paper look as the interactive map (story/year-in-salish-sea.html)
+source(here("R", "theme_eb.R"))   # shared chart style from the brand kit
+eb_use("salish-sea-whales")
 
-# Species colours stepped for a dark background (colourblind-checked)
-dark_colours <- c(
-  "Humpback whale" = "#3987e5",
-  "Orca"           = "#d95926",
-  "Grey whale"     = "#199e70"
+ocean  <- "#DCE6EA"   # pale blue-grey water
+land_c <- "#D3C9B5"   # warm sand, so land and sea read clearly
+
+# Species colours: the deeper brand inks, the same as the story charts and map
+species_colours <- c(
+  "Humpback whale" = "#2340FF",
+  "Orca"           = "#E0431B",
+  "Grey whale"     = "#00664B"
 )
 
 # --- One caption per month (each matches the whale calendar) -----------------
@@ -60,7 +63,7 @@ land_df <- story$land |>
   rename(lon = X, lat = Y, ring = L1, poly = L2)
 
 points <- story$year_in_sea |>
-  mutate(common = factor(common, levels = names(dark_colours)))
+  mutate(common = factor(common, levels = names(species_colours)))
 
 # --- The map ---------------------------------------------------------------
 xlim <- c(-125.4, -122.0)
@@ -79,7 +82,7 @@ draw_frame <- function(months, fade = 0) {
                  fill = land_c, colour = NA) +
     geom_point(data = shown, aes(lon, lat, colour = common, alpha = weight * 0.75),
                size = 0.9) +
-    scale_colour_manual(values = dark_colours, name = NULL, drop = FALSE) +
+    scale_colour_manual(values = species_colours, name = NULL, drop = FALSE) +
     scale_alpha_identity() +
     coord_quickmap(xlim = xlim, ylim = ylim, expand = FALSE) +
     guides(colour = guide_legend(override.aes = list(size = 4, alpha = 1))) +
@@ -87,30 +90,27 @@ draw_frame <- function(months, fade = 0) {
          subtitle = str_wrap(captions$caption[captions$month_name == current], 48),
          caption = str_wrap(paste("Whale sightings 2018 to 2025, pooled by month.",
                                   "Data: OBIS (Happywhale, iNaturalist, BC Cetacean",
-                                  "Sightings Network, and others)."), 70)) +
-    theme_void(base_size = 14) +
+                                  "Sightings Network, and others)."), 62)) +
+    theme_eb(base_size = 14, grid = "none") +
     theme(
-      plot.background   = element_rect(fill = ocean, colour = NA),
       panel.background  = element_rect(fill = ocean, colour = NA),
-      plot.title        = element_text(family = "serif", size = 30, colour = ink,
-                                       margin = margin(14, 0, 4, 14)),
-      plot.subtitle     = element_text(colour = ink, size = 15, lineheight = 1.1,
-                                       margin = margin(0, 0, 8, 14)),
-      plot.caption      = element_text(colour = ink_dim, size = 9, hjust = 0,
-                                       margin = margin(8, 14, 10, 14)),
-      legend.position   = "top",
-      legend.justification = "left",
-      legend.text       = element_text(colour = ink, size = 13),
-      legend.margin     = margin(0, 0, 6, 8),
-      plot.title.position   = "plot",
-      plot.caption.position = "plot"
+      panel.border      = element_rect(fill = NA, colour = eb_col$ink, linewidth = 1),
+      axis.text         = element_blank(),
+      axis.title        = element_blank(),
+      axis.line.x       = element_blank(),
+      axis.ticks.x      = element_blank(),
+      plot.title        = element_text(size = 30, margin = margin(4, 0, 4, 0)),
+      plot.subtitle     = element_text(size = 15, lineheight = 1.15, margin = margin(0, 0, 8, 0)),
+      plot.caption      = element_text(size = 9),
+      legend.text       = element_text(size = 13),
+      legend.margin     = margin(0, 0, 6, 0)
     )
 }
 
 # --- Still image (July) for loading and reduced motion -----------------------
 ggsave(here("story", "assets", "year-in-salish-sea.png"),
        draw_frame("July"),
-       width = 6.4, height = 8.4, dpi = 150, bg = ocean)
+       width = 6.4, height = 8.4, dpi = 150, bg = eb_col$paper, device = ragg::agg_png)
 
 # --- Animation ---------------------------------------------------------------
 # Each month is held for 2 seconds, then fades into the next over 1 second.
@@ -126,7 +126,7 @@ frame_no <- 0
 save_frame <- function(p) {
   frame_no <<- frame_no + 1
   ggsave(file.path(frame_dir, sprintf("frame_%04d.png", frame_no)), p,
-         width = 6.4, height = 8.4, dpi = 150, bg = ocean)
+         width = 6.4, height = 8.4, dpi = 150, bg = eb_col$paper, device = ragg::agg_png)
 }
 
 message("Drawing frames (this takes a few minutes) ...")
